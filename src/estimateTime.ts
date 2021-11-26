@@ -1,4 +1,8 @@
-export function estimateTime(currentTimestamp: string, lowerWaitTimestamp: string, upperWaitTimestamp: string): string {
+export function estimatedTime(
+	currentTimestamp: string,
+	lowerWaitTimestamp: string,
+	upperWaitTimestamp: string,
+): string {
 	const current = new Date(currentTimestamp);
 	const lower = new Date(lowerWaitTimestamp);
 	const upper = new Date(upperWaitTimestamp);
@@ -9,18 +13,21 @@ export function estimateTime(currentTimestamp: string, lowerWaitTimestamp: strin
 	const upperEstimate = upper.getTime() - current.getTime();
 	const upperTimes = convertMSToRoundedAndCappedTime(upperEstimate);
 
-	if (lowerTimes.totalMilliseconds === upperTimes.totalMilliseconds) {
+	// If the lower and upper estimates are the same, just display lower
+	if (lowerTimes.hours === upperTimes.hours && lowerTimes.minutes === upperTimes.minutes) {
 		return displaySingleTime(lowerTimes);
 	}
 
 	if (isBefore(lower, current)) {
+		// If the lower and upper are before current time, display asap
 		if (isBefore(upper, current)) {
 			return "as soon as possible";
 		}
+		// If only the lower is before current time, display upper time
 		return displaySingleTime(upperTimes);
 	}
 
-	return displayLowerUpperTimes(lowerTimes, upperTimes);
+	return displayTimeRange(lowerTimes, upperTimes);
 }
 
 /**
@@ -33,14 +40,16 @@ function isBefore(date: Date, dateToCompare: Date): boolean {
 	return date.getTime() - dateToCompare.getTime() < 0;
 }
 
+/**
+ * Human readable time in hours and minutes
+ */
 interface ITime {
 	hours: number;
 	minutes: number;
-	totalMilliseconds: number;
 }
 
 /**
- * Rounds, caps, and returns as in hour and string
+ * Rounds, caps, and returns ITime
  * @param ms
  */
 function convertMSToRoundedAndCappedTime(ms: number): ITime {
@@ -63,7 +72,7 @@ function getTime(ms: number): ITime {
 
 	const hours = Math.floor(ms / hourInMS);
 	const minutes = (hours ? ms - hours * hourInMS : ms) / minuteInMS;
-	return { hours, minutes, totalMilliseconds: ms };
+	return { hours, minutes };
 }
 
 function displaySingleTime(time: ITime): string {
@@ -77,7 +86,7 @@ function displaySingleTime(time: ITime): string {
 	return words.join(" ");
 }
 
-function displayLowerUpperTimes(lower: ITime, upper: ITime): string {
+function displayTimeRange(lower: ITime, upper: ITime): string {
 	if (!lower.hours && !upper.hours) {
 		return `${lower.minutes} - ${upper.minutes}min`;
 	}
