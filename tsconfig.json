@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"target": "esnext",
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"moduleResolution": "node",
+		"sourceMap": true,
+		"rootDir": "src",
+		"outDir": "build"
+	}
+}
