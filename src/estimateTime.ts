@@ -13,31 +13,7 @@ export function estimatedTime(
 	const upperEstimate = upper.getTime() - current.getTime();
 	const upperTimes = convertMSToRoundedAndCappedTime(upperEstimate);
 
-	// If the lower and upper estimates are the same, just display lower
-	if (lowerTimes.hours === upperTimes.hours && lowerTimes.minutes === upperTimes.minutes) {
-		return displaySingleTime(lowerTimes);
-	}
-
-	if (isBefore(lower, current)) {
-		// If the lower and upper are before current time, display asap
-		if (isBefore(upper, current)) {
-			return "as soon as possible";
-		}
-		// If only the lower is before current time, display upper time
-		return displaySingleTime(upperTimes);
-	}
-
-	return displayTimeRange(lowerTimes, upperTimes);
-}
-
-/**
- * Returns whether or not the first date is before the second date
- * @param date
- * @param dateToCompare
- * @returns
- */
-function isBefore(date: Date, dateToCompare: Date): boolean {
-	return date.getTime() - dateToCompare.getTime() < 0;
+	return getReadableTimeRange(lowerTimes, upperTimes);
 }
 
 /**
@@ -50,10 +26,10 @@ interface ITime {
 
 /**
  * Rounds, caps, and returns ITime
- * @param ms
+ * @param milliseconds
  */
-function convertMSToRoundedAndCappedTime(ms: number): ITime {
-	const rounded = roundToNearest(ms, 1000 * 60 * 5); // 5 minutes
+function convertMSToRoundedAndCappedTime(milliseconds: number): ITime {
+	const rounded = roundToNearest(milliseconds, 1000 * 60 * 5); // 5 minutes
 	const capped = capAtMax(rounded, 1000 * 60 * 60 * 2); // 2 hours
 	return getTime(capped);
 }
@@ -75,7 +51,7 @@ function getTime(ms: number): ITime {
 	return { hours, minutes };
 }
 
-function displaySingleTime(time: ITime): string {
+function getReadableSingleTime(time: ITime): string {
 	const words: string[] = [];
 	if (time.hours > 0) {
 		words.push(`${time.hours}h`);
@@ -86,12 +62,26 @@ function displaySingleTime(time: ITime): string {
 	return words.join(" ");
 }
 
-function displayTimeRange(lower: ITime, upper: ITime): string {
+function getReadableTimeRange(lower: ITime, upper: ITime): string {
+	const isLowerInPast = lower.hours < 0 || lower.minutes < 0;
+	const isUpperInPast = upper.hours < 0 || upper.hours < 0;
+	if (isLowerInPast && isUpperInPast) {
+		return "as soon as possible";
+	}
+	if (isLowerInPast) {
+		return getReadableSingleTime(upper);
+	}
+
+	// If the lower and upper estimates are the same, just display lower
+	if (lower.hours === upper.hours && lower.minutes === upper.minutes) {
+		return getReadableSingleTime(lower);
+	}
+
 	if (!lower.hours && !upper.hours) {
 		return `${lower.minutes} - ${upper.minutes}min`;
 	}
 	if (!lower.minutes && !upper.minutes) {
 		return `${lower.hours} - ${upper.hours}h`;
 	}
-	return `${displaySingleTime(lower)} - ${displaySingleTime(upper)}`;
+	return `${getReadableSingleTime(lower)} - ${getReadableSingleTime(upper)}`;
 }
