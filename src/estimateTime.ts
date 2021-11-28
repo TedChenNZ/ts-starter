@@ -1,4 +1,9 @@
-export function estimatedTime(
+/**
+ * Assumptions
+ * - inputs are all correct
+ * - the upperWaitTimestamp is always more in the future than the lowerWaitTimestamp
+ */
+export function getReadableWaitTimeEstimate(
 	currentTimestamp: string,
 	lowerWaitTimestamp: string,
 	upperWaitTimestamp: string,
@@ -17,7 +22,7 @@ export function estimatedTime(
 }
 
 /**
- * Human readable time in hours and minutes
+ * Readable time as hours and minutes
  */
 interface ITime {
 	hours: number;
@@ -65,9 +70,13 @@ function getReadableSingleTime(time: ITime): string {
 function getReadableTimeRange(lower: ITime, upper: ITime): string {
 	const isLowerInPast = lower.hours < 0 || lower.minutes < 0;
 	const isUpperInPast = upper.hours < 0 || upper.hours < 0;
+
+	// Return ‘as soon as possible’ if both the lower and upper estimates are in the past
 	if (isLowerInPast && isUpperInPast) {
 		return "as soon as possible";
 	}
+
+	// Only display the upper estimate value if the lower estimate value is in the past
 	if (isLowerInPast) {
 		return getReadableSingleTime(upper);
 	}
@@ -77,11 +86,15 @@ function getReadableTimeRange(lower: ITime, upper: ITime): string {
 		return getReadableSingleTime(lower);
 	}
 
+	// If both estimates are in hours, only show h once
 	if (!lower.hours && !upper.hours) {
 		return `${lower.minutes} - ${upper.minutes}min`;
 	}
+
+	// If both estimates are in minutes, only show min once
 	if (!lower.minutes && !upper.minutes) {
 		return `${lower.hours} - ${upper.hours}h`;
 	}
+
 	return `${getReadableSingleTime(lower)} - ${getReadableSingleTime(upper)}`;
 }
